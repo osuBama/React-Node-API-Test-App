@@ -4,8 +4,8 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "Node Server",
-    "dev": "Nodemon Server"
+    "start": "server",
+    "dev": "dotenv -- nodemon"
   },
   "keywords": [],
   "author": "",
