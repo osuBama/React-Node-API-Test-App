@@ -1,8 +1,6 @@
 require('dotenv').config();
-require('mssql');
 
-
-//This is the central DB pool module, to be reused for all SQL handling
+const sql = require('mssql');
 
 const config = {
 server: process.env.SQL_SERVER,
@@ -21,29 +19,21 @@ options: {
   }
 };
 
-let poolPromise;
 
-function getPool(){
- if(!poolPromise){
-    poolPromise = sql.connect(config)
-        .then(p =>{
-            return p.request().query('SELECT 1 AS ok').then(() => p);
-        })    
-        .catch(err => {
-            poolPromise = undefined;
-            throw err;
-        });
-    }
-    return poolPromise;
-}
+
+const pool = new sql.ConnectionPool(config);
+const poolConnect = pool.connect();
+
+pool.on('error', err => console.error('[DB] pool error:', err));
+pool.on('connect', () => console.log('[DB] pool connected'));
+pool.on('acquire', () => console.log('[DB] connection acquired'));
+pool.on('release', () => console.log('[DB] connection released'));
 
 async function query(q, params = []) {
-  const pool = await getPool();
+  await poolConnect; // wait until the single pool is ready
   const req = pool.request();
-  for (const { name, type, value } of params) {
-    req.input(name, type, value);
-  }
+  for (const { name, type, value } of params) req.input(name, type, value);
   return req.query(q);
 }
 
-module.exports = { getPool, query, config };
+module.exports = { pool, sql, query };
